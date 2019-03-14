@@ -171,8 +171,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * Test if the specified key exists. The command returns "1" if the key exists, otherwise "0" is
-   * returned. Note that even keys set with an empty string as value will return "1". Time
+   * Test if the specified key exists. The command returns true if the key exists, otherwise false is
+   * returned. Note that even keys set with an empty string as value will return true. Time
    * complexity: O(1)
    * @param key
    * @return Boolean reply, true if the key exists, otherwise false
@@ -277,7 +277,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
    * Set a timeout on the specified key. After the timeout the key will be automatically deleted by
    * the server. A key with an associated timeout is said to be volatile in Redis terminology.
    * <p>
-   * Voltile keys are stored on disk like the other keys, the timeout is persistent too like all the
+   * Volatile keys are stored on disk like the other keys, the timeout is persistent too like all the
    * other aspects of the dataset. Saving a dataset containing expires and stopping the server does
    * not stop the flow of time as Redis stores on disk the time when the key will no longer be
    * available as Unix time, and not the remaining seconds.
@@ -302,9 +302,9 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * EXPIREAT works exctly like {@link #expire(String, int) EXPIRE} but instead to get the number of
+   * EXPIREAT works exactly like {@link #expire(String, int) EXPIRE} but instead to get the number of
    * seconds representing the Time To Live of the key as a second argument (that is a relative way
-   * of specifing the TTL), it takes an absolute one in the form of a UNIX timestamp (Number of
+   * of specifying the TTL), it takes an absolute one in the form of a UNIX timestamp (Number of
    * seconds elapsed since 1 Gen 1970).
    * <p>
    * EXPIREAT was introduced in order to implement the Append Only File persistence mode so that
@@ -383,7 +383,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * Get the values of all the specified keys. If one or more keys dont exist or is not of type
+   * Get the values of all the specified keys. If one or more keys don't exist or is not of type
    * String, a 'nil' value is returned instead of the value of the specified key, but the operation
    * never fails.
    * <p>
@@ -779,7 +779,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
    * Test for existence of a specified field in a hash. <b>Time complexity:</b> O(1)
    * @param key
    * @param field
-   * @return Return 1 if the hash stored at key contains the specified field. Return 0 if the key is
+   * @return Return true if the hash stored at key contains the specified field. Return false if the key is
    *         not found or the field is not present.
    */
   @Override
@@ -1044,7 +1044,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
    * Remove the first count occurrences of the value element from the list. If count is zero all the
    * elements are removed. If count is negative elements are removed from tail to head, instead to
    * go from head to tail that is the normal behaviour. So for example LREM with count -2 and hello
-   * as value to remove against the list (a,b,c,hello,x,hello,hello) will lave the list
+   * as value to remove against the list (a,b,c,hello,x,hello,hello) will leave the list
    * (a,b,c,hello,x). The number of removed elements is returned as an integer, see below for more
    * information about the returned value. Note that non existing keys are considered like empty
    * lists by LREM, so LREM against non existing keys will always return 0.
@@ -1104,7 +1104,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
    * <p>
    * If the key does not exist or the list is already empty the special value 'nil' is returned. If
    * the srckey and dstkey are the same the operation is equivalent to removing the last element
-   * from the list and pusing it as first element of the list, so it's a "list rotation" command.
+   * from the list and pushing it as first element of the list, so it's a "list rotation" command.
    * <p>
    * Time complexity: O(1)
    * @param srckey
@@ -1196,7 +1196,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * Move the specifided member from the set at srckey to the set at dstkey. This operation is
+   * Move the specified member from the set at srckey to the set at dstkey. This operation is
    * atomic, in every given moment the element will appear to be in the source or destination set
    * for accessing clients.
    * <p>
@@ -1236,12 +1236,12 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * Return 1 if member is a member of the set stored at key, otherwise 0 is returned.
+   * Return true if member is a member of the set stored at key, otherwise false is returned.
    * <p>
    * Time complexity O(1)
    * @param key
    * @param member
-   * @return Integer reply, specifically: 1 if the element is a member of the set 0 if the element
+   * @return Boolean reply, specifically: true if the element is a member of the set false if the element
    *         is not a member of the set OR if the key does not exist
    */
   @Override
@@ -1275,8 +1275,8 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * This commnad works exactly like {@link #sinter(String...) SINTER} but instead of being returned
-   * the resulting set is sotred as dstkey.
+   * This command works exactly like {@link #sinter(String...) SINTER} but instead of being returned
+   * the resulting set is stored as dstkey.
    * <p>
    * Time complexity O(N*M) worst case where N is the cardinality of the smallest set and M the
    * number of sets
@@ -1394,10 +1394,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   /**
-   * Add the specified member having the specifeid score to the sorted set stored at key. If member
+   * Add the specified member having the specified score to the sorted set stored at key. If member
    * is already a member of the sorted set the score is updated, and the element reinserted in the
    * right position to ensure sorting. If key does not exist a new sorted set with the specified
-   * member as sole member is crated. If the key exists but does not hold a sorted set value an
+   * member as sole member is created. If the key exists but does not hold a sorted set value an
    * error is returned.
    * <p>
    * The score value can be the string representation of a double precision floating point number.
@@ -1468,7 +1468,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
    * position of the element in the sorted set accordingly. If member does not already exist in the
    * sorted set it is added with increment as score (that is, like if the previous score was
    * virtually zero). If key does not exist a new sorted set with the specified member as sole
-   * member is crated. If the key exists but does not hold a sorted set value an error is returned.
+   * member is created. If the key exists but does not hold a sorted set value an error is returned.
    * <p>
    * The score value can be the string representation of a double precision floating point number.
    * It's possible to provide a negative value to perform a decrement.
@@ -2680,7 +2680,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
    * Redis configuration file, with the following exceptions:
    * <p>
    * <ul>
-   * <li>The save paramter is a list of space-separated integers. Every pair of integers specify the
+   * <li>The save parameter is a list of space-separated integers. Every pair of integers specify the
    * time and number of changes limit to trigger a save. For instance the command CONFIG SET save
    * "3600 10 60 10000" will configure the server to issue a background saving of the RDB file every
    * 3600 seconds if there are at least 10 changes in the dataset, and every 60 seconds if there are
@@ -3500,13 +3500,15 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   @Override
   public void close() {
     if (dataSource != null) {
+      Pool<Jedis> pool = this.dataSource;
+      this.dataSource = null;
       if (client.isBroken()) {
-        this.dataSource.returnBrokenResource(this);
+        pool.returnBrokenResource(this);
       } else {
-        this.dataSource.returnResource(this);
+        pool.returnResource(this);
       }
     } else {
-      client.close();
+      super.close();
     }
   }
 
