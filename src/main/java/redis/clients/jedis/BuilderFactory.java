@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import redis.clients.jedis.params.stream.*;
 import redis.clients.util.JedisByteHashMap;
 import redis.clients.util.SafeEncoder;
 
@@ -473,4 +474,245 @@ public final class BuilderFactory {
     throw new InstantiationError( "Must not instantiate this class" );
   }
 
+  public static final Builder<StreamParams> STREAM_PARAMS = new Builder<StreamParams>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public StreamParams build(Object data) {
+      List<Object> element = (List<Object>) data;
+      StreamParams streamParams = new StreamParams();
+      streamParams.setEntryId(STRING.build(element.get(0)));
+      if(element.get(1)!=null) {
+        Map<String, String> map = STRING_MAP.build(element.get(1));
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+          streamParams.addPair(entry.getKey(), entry.getValue());
+        }
+      }
+      return streamParams;
+    }
+
+    @Override
+    public String toString(){
+      return "StreamParams";
+    }
+  };
+
+  public static final Builder<List<StreamParams>> STREAM_PARAMS_LIST = new Builder<List<StreamParams>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<StreamParams> build(Object data) {
+      List<Object> element = (List<Object>) data;
+      List<StreamParams> listResult = new ArrayList<StreamParams>();
+      if(element == null){
+        return listResult;
+      }
+      for (Object obj : element) {//命令只会返回空集合，不会有nil
+        listResult.add(BuilderFactory.STREAM_PARAMS.build(obj));
+      }
+      return listResult;
+    }
+
+    @Override
+    public String toString(){
+      return "List<StreamParams>";
+    }
+  };
+
+  public static final Builder<Map<String, List<StreamParams>>> STREAM_PARAMS_MAPLIST = new Builder<Map<String, List<StreamParams>>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, List<StreamParams>> build(Object data) {
+      List<Object> element = (List<Object>) data;
+      Map<String,List<StreamParams>> result = new HashMap<String, List<StreamParams>>();
+      if(element == null){
+        return result;
+      }
+      for(Object obj : element){
+        List<Object> streamReply = (List<Object>) obj;
+        String key = STRING.build(streamReply.get(0));
+        Object streamData = streamReply.get(1);
+        if(key == null || streamData == null){
+          continue;
+        }
+        result.put(key , BuilderFactory.STREAM_PARAMS_LIST.build(streamData));
+      }
+      return result;
+    }
+
+    @Override
+    public String toString(){
+      return "Map<String, List<StreamParams>>";
+    }
+  };
+
+  public static final Builder<StreamInfo> STREAM_INFO = new Builder<StreamInfo>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public StreamInfo build(Object data) {
+      List<Object> info = (List<Object>) data;
+      StreamInfo infoParams = new StreamInfo();
+      infoParams.setLength(LONG.build(info.get(1)));
+      infoParams.setRadixTreeKeys(LONG.build(info.get(3)));
+      infoParams.setRadixTreeNodes(LONG.build(info.get(5)));
+      infoParams.setGroups(LONG.build(info.get(7)));
+      infoParams.setLastGeneratedId(STRING.build(info.get(9)));
+      infoParams.setFirstEntry(STREAM_PARAMS.build(info.get(11)));
+      infoParams.setLastEntry(STREAM_PARAMS.build(info.get(13)));
+      return infoParams;
+    }
+
+    @Override
+    public String toString(){
+      return "StreamInfo";
+    }
+  };
+
+  public static final Builder<GroupInfo> GROUP_INFO = new Builder<GroupInfo>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public GroupInfo build(Object data) {
+      List<Object> list = (List<Object>) data;
+      GroupInfo groupInfo = new GroupInfo();
+      groupInfo.setName(STRING.build(list.get(1)));
+      groupInfo.setConsumers(LONG.build(list.get(3)));
+      groupInfo.setPending(LONG.build(list.get(5)));
+      groupInfo.setLastDeliveredId(STRING.build(list.get(7)));
+      return groupInfo;
+    }
+
+    @Override
+    public String toString(){
+      return "GroupInfo";
+    }
+  };
+
+  public static final Builder<List<GroupInfo>> GROUP_INFO_LIST = new Builder<List<GroupInfo>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<GroupInfo> build(Object data) {
+      List<Object> list = (List<Object>) data;
+      List<GroupInfo> result = new ArrayList<GroupInfo>();
+      if(list == null){
+        return result;
+      }
+      for(Object group : list){
+        result.add(BuilderFactory.GROUP_INFO.build(group));
+      }
+      return result;
+    }
+
+    @Override
+    public String toString(){
+      return "List<GroupInfo>";
+    }
+  };
+
+  public static final Builder<ConsumerInfo> CONSUMER_INFO = new Builder<ConsumerInfo>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public ConsumerInfo build(Object data) {
+      List<Object> list = (List<Object>) data;
+      ConsumerInfo consumerInfo = new ConsumerInfo();
+      consumerInfo.setName(STRING.build(list.get(1)));
+      consumerInfo.setPending(LONG.build(list.get(3)));
+      if(list.size()>4){
+        consumerInfo.setIdle(LONG.build(list.get(5)));
+      }
+      return consumerInfo;
+    }
+
+    @Override
+    public String toString(){
+      return "ConsumerInfo";
+    }
+  };
+
+  public static final Builder<List<ConsumerInfo>> CONSUMER_INFO_LIST = new Builder<List<ConsumerInfo>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<ConsumerInfo> build(Object data) {
+      List<Object> list = (List<Object>) data;
+      List<ConsumerInfo> result = new ArrayList<ConsumerInfo>();
+      if(list == null){
+        return result;
+      }
+      for(Object consumer : list){
+        result.add(BuilderFactory.CONSUMER_INFO.build(consumer));
+      }
+      return result;
+    }
+
+    @Override
+    public String toString(){
+      return "List<ConsumerInfo>";
+    }
+  };
+
+  public static final Builder<GroupPendingInfo> GROUP_PENDING_INFO = new Builder<GroupPendingInfo>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public GroupPendingInfo build(Object data) {
+      List<Object> list = (List<Object>) data;
+      GroupPendingInfo groupPendingInfo=new GroupPendingInfo();
+      groupPendingInfo.setCount(LONG.build(list.get(0)));
+      groupPendingInfo.setOldestEntryId(STRING.build(list.get(1)));
+      groupPendingInfo.setNewestEntryId(STRING.build(list.get(2)));
+      List<Object> consumers = (List<Object>) list.get(3);
+      List<ConsumerInfo> consumerInfos = new ArrayList<ConsumerInfo>();
+      ConsumerInfo consumerInfo;
+      for(Object consumer:consumers){
+        List<Object> consumerInfoList = (List<Object>) consumer;
+        consumerInfo=new ConsumerInfo();
+        consumerInfo.setName(STRING.build(consumerInfoList.get(0)));
+        consumerInfo.setPending(LONG.build(consumerInfoList.get(1)));
+        consumerInfos.add(consumerInfo);
+      }
+      groupPendingInfo.setConsumers(consumerInfos);
+      return groupPendingInfo;
+    }
+
+    @Override
+    public String toString(){
+      return "GroupPendingInfo";
+    }
+  };
+
+  public static final Builder<PendingInfo> PENDING_INFO = new Builder<PendingInfo>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public PendingInfo build(Object data) {
+      List<Object> list = (List<Object>) data;
+      PendingInfo pendingInfo=new PendingInfo();
+      pendingInfo.setEntryId(STRING.build(list.get(0)));
+      pendingInfo.setConsumer(STRING.build(list.get(1)));
+      pendingInfo.setIdle(LONG.build(list.get(2)));
+      pendingInfo.setDeliveredTimes(LONG.build(list.get(3)));
+      return pendingInfo;
+    }
+
+    @Override
+    public String toString(){
+      return "PendingInfo";
+    }
+  };
+
+  public static final Builder<List<PendingInfo>> PENDING_INFO_LIST = new Builder<List<PendingInfo>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<PendingInfo> build(Object data) {
+      List<Object> list = (List<Object>) data;
+      List<PendingInfo> result = new ArrayList<PendingInfo>();
+      if(list == null){
+        return result;
+      }
+      for(Object pending : list){
+        result.add(BuilderFactory.PENDING_INFO.build(pending));
+      }
+      return result;
+    }
+
+    @Override
+    public String toString(){
+      return "List<PendingInfo>";
+    }
+  };
 }

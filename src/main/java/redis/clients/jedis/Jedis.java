@@ -2,9 +2,11 @@ package redis.clients.jedis;
 
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.JedisCluster.Reset;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.params.geo.GeoRadiusParam;
 import redis.clients.jedis.params.sortedset.ZAddParams;
 import redis.clients.jedis.params.sortedset.ZIncrByParams;
+import redis.clients.jedis.params.stream.*;
 import redis.clients.util.Pool;
 import redis.clients.util.SafeEncoder;
 import redis.clients.util.Slowlog;
@@ -18,7 +20,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 
 public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommands,
-    AdvancedJedisCommands, ScriptingCommands, BasicCommands, ClusterCommands, SentinelCommands {
+    AdvancedJedisCommands, ScriptingCommands, BasicCommands, ClusterCommands, SentinelCommands, StreamCommands {
 
   protected Pool<Jedis> dataSource = null;
 
@@ -3637,4 +3639,341 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     return client.getIntegerMultiBulkReply();
   }
 
+  @Override
+  public String xaddDefault(String key, String... pairs) {
+    return xadd(key,"*",pairs);
+  }
+
+  @Override
+  public String xaddDefault(String key, Map<String, String> pairs) {
+    return xadd(key,"*", pairs);
+  }
+
+  @Override
+  public String xadd(String key, String entryId, String... pairs) {
+    checkIsInMultiOrPipeline();
+    client.xadd(key, entryId, pairs);
+    return client.getBulkReply();
+  }
+
+  @Override
+  public String xadd(String key, String entryId, Map<String, String> pairs) {
+    checkIsInMultiOrPipeline();
+    client.xadd(key, entryId, pairs);
+    return client.getBulkReply();
+  }
+
+  @Override
+  public String xaddWithMaxlen(String key, long maxLen, String entryId, String... pairs) {
+    return xaddWithMaxlen(key,false, maxLen, entryId, pairs);
+  }
+
+  @Override
+  public String xaddWithMaxlen(String key, long maxLen, String entryId, Map<String, String> pairs) {
+    return xaddWithMaxlen(key, false, maxLen, entryId, pairs);
+  }
+
+  @Override
+  public String xaddWithMaxlen(String key, boolean approx, long maxLen, String entryId, String... pairs) {
+    checkIsInMultiOrPipeline();
+    client.xadd(key, approx, maxLen, entryId, pairs);
+    return client.getBulkReply();
+  }
+
+  @Override
+  public String xaddWithMaxlen(String key, boolean approx, long maxLen, String entryId, Map<String, String> pairs) {
+    checkIsInMultiOrPipeline();
+    client.xadd(key, approx, maxLen, entryId, pairs);
+    return client.getBulkReply();
+  }
+
+  @Override
+  public long xlen(String key) {
+    checkIsInMultiOrPipeline();
+    client.xlen(key);
+    return client.getIntegerReply();
+  }
+
+  @Override
+  public List<StreamParams> xrange(String key, String startEntryId, String endEntryId) {
+    return xrange(key, startEntryId, endEntryId, -1);
+  }
+
+  @Override
+  public List<StreamParams> xrange(String key, String startEntryId, String endEntryId, long count) {
+    checkIsInMultiOrPipeline();
+    client.xrange(key, startEntryId, endEntryId, count);
+    return BuilderFactory.STREAM_PARAMS_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<StreamParams> xrevrange(String key, String startEntryId, String endEntryId) {
+    return xrevrange(key, startEntryId, endEntryId,-1);
+  }
+
+  @Override
+  public List<StreamParams> xrevrange(String key, String startEntryId, String endEntryId, long count) {
+    checkIsInMultiOrPipeline();
+    client.xrevrange(key, startEntryId, endEntryId, count);
+    return BuilderFactory.STREAM_PARAMS_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xread(String... params) {
+    checkIsInMultiOrPipeline();
+    if((params.length & 1) > 0){ //奇数个参数，非法
+      throw new JedisDataException("Invalid num of parameters");
+    }
+    client.xread(params);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xread(Map<String, String> pairs) {
+    checkIsInMultiOrPipeline();
+    client.xread(pairs);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xread(long count, String... params) {
+    checkIsInMultiOrPipeline();
+    client.xread(count, params);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xread(long count, Map<String, String> pairs) {
+    checkIsInMultiOrPipeline();
+    client.xread(count, pairs);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public NewStreamParams xreadBlock(long block, String... keys) {
+    checkIsInMultiOrPipeline();
+    client.xreadBlock(block, keys);
+    if(block == 0){
+      client.setTimeoutInfinite();
+    }
+    NewStreamParams result = null;
+    try {
+      Map<String,List<StreamParams>> xreadResult = BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+      if(!xreadResult.isEmpty()) {
+        String key = xreadResult.keySet().iterator().next();
+        result = new NewStreamParams(key, xreadResult.remove(key).remove(0));
+      }
+    } finally {
+      client.rollbackTimeout();
+    }
+    return result;
+  }
+
+  @Override
+  public NewStreamParams xreadBlock(String... keys) {
+    return xreadBlock(0, keys);
+  }
+
+  @Override
+  public long xdel(String key, String entryId) {
+    checkIsInMultiOrPipeline();
+    client.xdel(key, entryId);
+    return client.getIntegerReply();
+  }
+
+  @Override
+  public long xtrimWithMaxlen(String key, long maxlen) {
+    return xtrimWithMaxlen(key, false, maxlen);
+  }
+
+  @Override
+  public long xtrimWithMaxlen(String key, boolean approx, long maxlen) {
+    checkIsInMultiOrPipeline();
+    client.xtrimWithMaxlen(key, approx, maxlen);
+    return client.getIntegerReply();
+  }
+
+  @Override
+  public String xgroupcreate(String key, String group, String entryId) {
+    return xgroupcreate(key, group, entryId, false);
+  }
+
+  @Override
+  public String xgroupcreate(String key, String group, String entryId, boolean mkstream) {
+    checkIsInMultiOrPipeline();
+    client.xgroupcreate(key, group, entryId, mkstream);
+    return client.getBulkReply();
+  }
+
+  @Override
+  public String xgroupsetid(String key, String group, String entryId){
+    checkIsInMultiOrPipeline();
+    client.xgroupsetid(key, group, entryId);
+    return client.getBulkReply();
+  }
+
+  @Override
+  public long xgroupdestroy(String key, String group) {
+    checkIsInMultiOrPipeline();
+    client.xgroupdestroy(key, group);
+    return client.getIntegerReply();
+  }
+
+  @Override
+  public long xgroupdelconsumer(String key, String group, String consumer) {
+    checkIsInMultiOrPipeline();
+    client.xgroupdelconsumer(key, group, consumer);
+    return client.getIntegerReply();
+  }
+
+  @Override
+  public StreamInfo xinfostream(String key) {
+    checkIsInMultiOrPipeline();
+    client.xinfostream(key);
+    return BuilderFactory.STREAM_INFO.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<GroupInfo> xinfogroups(String key) {
+    checkIsInMultiOrPipeline();
+    client.xinfogroups(key);
+    return BuilderFactory.GROUP_INFO_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<ConsumerInfo> xinfoconsumers(String key, String group) {
+    checkIsInMultiOrPipeline();
+    client.xinfoconsumers(key, group);
+    return BuilderFactory.CONSUMER_INFO_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public GroupPendingInfo xpending(String key, String group) {
+    checkIsInMultiOrPipeline();
+    client.xpending(key, group);
+    return BuilderFactory.GROUP_PENDING_INFO.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<PendingInfo> xpending(String key, String group, String startEntryId, String endEntryId, long count) {
+    return xpending(key, group, startEntryId, endEntryId, count, null);
+  }
+
+  @Override
+  public List<PendingInfo> xpending(String key, String group, String startEntryId, String endEntryId, long count, String consumer) {
+    checkIsInMultiOrPipeline();
+    client.xpending(key, group, startEntryId, endEntryId, count, consumer);
+    return BuilderFactory.PENDING_INFO_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xreadgroup(String group, String consumer, String... params) {
+    checkIsInMultiOrPipeline();
+    if((params.length & 1) > 0){ //奇数个参数，非法
+      throw new JedisDataException("Invalid num of parameters");
+    }
+    client.xreadgroup(group, consumer, params);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xreadgroup(String group, String consumer, Map<String, String> pairs) {
+    checkIsInMultiOrPipeline();
+    client.xreadgroup(group, consumer, pairs);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xreadgroup(String group, String consumer, long count, String... params) {
+    checkIsInMultiOrPipeline();
+    client.xreadgroup(group, consumer, count, params);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public Map<String, List<StreamParams>> xreadgroup(String group, String consumer, long count, Map<String, String> pairs) {
+    checkIsInMultiOrPipeline();
+    client.xreadgroup(group, consumer, count, pairs);
+    return BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public NewStreamParams xreadgroupBlock(String group, String consumer, long block, String... keys) {
+    checkIsInMultiOrPipeline();
+    client.xreadgroupBlock(group, consumer, block, keys);
+    if(block == 0){
+      client.setTimeoutInfinite();
+    }
+    NewStreamParams result = null;
+    try {
+      Map<String,List<StreamParams>> xreadResult = BuilderFactory.STREAM_PARAMS_MAPLIST.build(client.getObjectMultiBulkReply());;
+      if(!xreadResult.isEmpty()) {
+        String key = xreadResult.keySet().iterator().next();
+        result = new NewStreamParams(key, xreadResult.remove(key).remove(0));
+      }
+    } finally {
+      client.rollbackTimeout();
+    }
+    return result;
+  }
+
+  @Override
+  public NewStreamParams xreadgroupBlock(String group, String consumer, String... keys) {
+    return xreadgroupBlock(group, consumer, 0, keys);
+  }
+
+  @Override
+  public long xack(String key, String group, String... entryIds) {
+    checkIsInMultiOrPipeline();
+    client.xack(key, group, entryIds);
+    return client.getIntegerReply();
+  }
+
+  @Override
+  public List<StreamParams> xclaim(String key, String group, String consumer, long minIdleTime, String... entryIds) {
+    return xclaim(key, group, consumer, minIdleTime, 0, entryIds);
+  }
+
+  @Override
+  public List<StreamParams> xclaim(String key, String group, String consumer, long minIdleTime, long idleTime, String... entryIds) {
+    return xclaim(key, group, consumer, minIdleTime, idleTime, -1, entryIds);
+  }
+
+  @Override
+  public List<StreamParams> xclaim(String key, String group, String consumer, long minIdleTime, long idleTime, long retryCount, String... entryIds) {
+    checkIsInMultiOrPipeline();
+    client.xclaim(false, key, group, consumer, minIdleTime, idleTime, retryCount, entryIds);
+    return BuilderFactory.STREAM_PARAMS_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<StreamParams> xclaimForce(String key, String group, String consumer, String... entryIds) {
+    checkIsInMultiOrPipeline();
+    client.xclaimForce(false, key, group, consumer, entryIds);
+    return BuilderFactory.STREAM_PARAMS_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<String> xclaimJustid(String key, String group, String consumer, long minIdleTime, String... entryIds) {
+    return xclaimJustid(key, group, consumer, minIdleTime, 0, entryIds);
+  }
+
+  @Override
+  public List<String> xclaimJustid(String key, String group, String consumer, long minIdleTime, long idleTime, String... entryIds) {
+    return xclaimJustid(key, group, consumer, minIdleTime, idleTime, -1, entryIds);
+  }
+
+  @Override
+  public List<String> xclaimJustid(String key, String group, String consumer, long minIdleTime, long idleTime, long retryCount, String... entryIds) {
+    checkIsInMultiOrPipeline();
+    client.xclaim(true, key, group, consumer, minIdleTime, idleTime, retryCount, entryIds);
+    return client.getMultiBulkReply();
+  }
+
+  @Override
+  public List<String> xclaimForceAndJustid(String key, String group, String consumer, String... entryIds) {
+    checkIsInMultiOrPipeline();
+    client.xclaimForce(true, key, group, consumer, entryIds);
+    return client.getMultiBulkReply();
+  }
 }

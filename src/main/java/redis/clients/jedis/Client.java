@@ -1142,4 +1142,154 @@ public class Client extends BinaryClient implements Commands {
     bitfield(SafeEncoder.encode(key), SafeEncoder.encodeMany(arguments));
   }
 
+  private byte[][] convertPairsMap(Map<String, String> map){
+    List<byte[]> pairs = new ArrayList<byte[]>();
+    for(Map.Entry<String,String> entry : map.entrySet()){
+      pairs.add(SafeEncoder.encode(entry.getKey()));
+      pairs.add(SafeEncoder.encode(entry.getValue()));
+    }
+    return pairs.toArray(new byte[map.size()*2][]);
+  }
+
+  private byte[][] convertParamsMap(Map<String, String> map){
+    byte[][] pairs = new byte[map.size()*2][];
+    int keyIdx = 0;
+    int entryIdx = map.size();
+    for (Map.Entry<String, String> entry : map.entrySet()) {
+      pairs[keyIdx++] = SafeEncoder.encode(entry.getKey());
+      pairs[entryIdx++] = SafeEncoder.encode(entry.getValue());
+    }
+    return pairs;
+  }
+
+  public void xadd(String key, String entryId, String... pairs) {
+    xadd(SafeEncoder.encode(key), SafeEncoder.encode(entryId), SafeEncoder.encodeMany(pairs));
+  }
+
+  public void xadd(String key, String entryId, Map<String, String> pairs){
+    xadd(SafeEncoder.encode(key), SafeEncoder.encode(entryId), convertPairsMap(pairs));
+  }
+
+  public void xadd(String key, boolean approx, long maxLen, String entryId, String... pairs){
+    xadd(SafeEncoder.encode(key), approx, maxLen, SafeEncoder.encode(entryId), SafeEncoder.encodeMany(pairs));
+  }
+
+  public void xadd(String key, boolean approx, long maxLen, String entryId, Map<String, String> pairs){
+    xadd(SafeEncoder.encode(key), approx, maxLen, SafeEncoder.encode(entryId), convertPairsMap(pairs));
+  }
+
+  public void xlen(String key){
+    xlen(SafeEncoder.encode(key));
+  }
+
+  public void xrange(String key,String startEntryId,String endEntryId,long count){
+    xrange(SafeEncoder.encode(key), SafeEncoder.encode(startEntryId), SafeEncoder.encode(endEntryId), count);
+  }
+
+  public void xrevrange(String key,String startEntryId,String endEntryId,long count){
+    xrevrange(SafeEncoder.encode(key), SafeEncoder.encode(startEntryId), SafeEncoder.encode(endEntryId), count);
+  }
+
+  public void xread(String... params){
+    xread(SafeEncoder.encodeMany(params));
+  }
+
+  public void xread(Map<String, String> pairs){
+    xread(convertParamsMap(pairs));
+  }
+
+  public void xread(long count,String...params){
+    if(count<=0){
+      xread(params);
+    }else {
+      xread(count, SafeEncoder.encodeMany(params));
+    }
+  }
+
+  public void xread(long count, Map<String, String> pairs){
+    xread(count, convertParamsMap(pairs));
+  }
+
+  public void xreadBlock(long block,String... keys){
+    xreadBlock(block,SafeEncoder.encodeMany(keys));
+  }
+
+  public void xdel(String key, String entryId){
+    xdel(SafeEncoder.encode(key), SafeEncoder.encode(entryId));
+  }
+
+  public void xtrimWithMaxlen(String key, boolean approx, long maxlen) {
+    xtrimWithMaxlen(SafeEncoder.encode(key), approx, maxlen);
+  }
+
+  public void xgroupcreate(String key, String group, String entryId, boolean mkstream){
+    xgroupcreate(SafeEncoder.encode(key), SafeEncoder.encode(group), SafeEncoder.encode(entryId), mkstream);
+  }
+
+  public void xgroupsetid(String key, String group, String entryId){
+    xgroupsetid(SafeEncoder.encode(key), SafeEncoder.encode(group), SafeEncoder.encode(entryId));
+  }
+
+  public void xgroupdestroy(String key, String group){
+    xgroupdestroy(SafeEncoder.encode(key), SafeEncoder.encode(group));
+  }
+
+  public void xgroupdelconsumer(String key, String group, String consumer){
+    xgroupdelconsumer(SafeEncoder.encode(key), SafeEncoder.encode(group), SafeEncoder.encode(consumer));
+  }
+
+  public void xinfostream(String key){
+    xinfostream(SafeEncoder.encode(key));
+  }
+
+  public void xinfogroups(String key){
+    xinfogroups(SafeEncoder.encode(key));
+  }
+
+  public void xinfoconsumers(String key, String group){
+    xinfoconsumers(SafeEncoder.encode(key),SafeEncoder.encode(group));
+  }
+
+  public void xpending(String key, String group){
+    xpending(SafeEncoder.encode(key),SafeEncoder.encode(group));
+  }
+
+  public void xpending(String key, String group, String startEntryId, String endEntryId, long count, String consumer){
+    xpending(SafeEncoder.encode(key), SafeEncoder.encode(group),
+            SafeEncoder.encode(startEntryId), SafeEncoder.encode(endEntryId), count, consumer==null?null:SafeEncoder.encode(consumer));
+  }
+
+  public void xreadgroup(String group, String consumer, String... params){
+    xreadgroup(SafeEncoder.encode(group), SafeEncoder.encode(consumer), SafeEncoder.encodeMany(params));
+  }
+
+  public void xreadgroup(String group, String consumer, Map<String, String> pairs){
+    xreadgroup(SafeEncoder.encode(group), SafeEncoder.encode(consumer), convertParamsMap(pairs));
+  }
+
+  public void xreadgroup(String group, String consumer, long count, String... params){
+    xreadgroup(SafeEncoder.encode(group), SafeEncoder.encode(consumer), count, SafeEncoder.encodeMany(params));
+  }
+
+  public void xreadgroup(String group, String consumer, long count, Map<String, String> pairs){
+    xreadgroup(SafeEncoder.encode(group), SafeEncoder.encode(consumer), count, convertParamsMap(pairs));
+  }
+
+  public void xreadgroupBlock(String group, String consumer, long block, String... key){
+    xreadgroupBlock(SafeEncoder.encode(group), SafeEncoder.encode(consumer), block, SafeEncoder.encodeMany(key));
+  }
+
+  public void xack(String key, String consumer, String... entryIds){
+    xack(SafeEncoder.encode(key), SafeEncoder.encode(consumer), SafeEncoder.encodeMany(entryIds));
+  }
+
+  public void xclaim(boolean justid, String key, String group, String consumer, long minIdleTime, long idleTime, long retryCount, String... entryIds){
+    xclaim(false, justid, SafeEncoder.encode(key), SafeEncoder.encode(group), SafeEncoder.encode(consumer)
+            , minIdleTime, idleTime, retryCount, SafeEncoder.encodeMany(entryIds));
+  }
+
+  public void xclaimForce(boolean justid, String key, String group, String consumer, String... entryId){
+    xclaim(true, justid, SafeEncoder.encode(key), SafeEncoder.encode(group), SafeEncoder.encode(consumer)
+            , 0, 0, 1, SafeEncoder.encodeMany(entryId));
+  }
 }

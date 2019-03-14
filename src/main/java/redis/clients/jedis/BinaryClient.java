@@ -1311,4 +1311,184 @@ public class BinaryClient extends Connection {
   public void bitfield(final byte[] key, final byte[]... value) {
     sendCommand(BITFIELD, joinParameters(key, value));
   }
+
+  public void xadd(byte[] key, byte[] entryId, byte[][] pairs) {
+    sendCommand(XADD,joinParameters(key,entryId,pairs));
+  }
+
+  public void xadd(byte[] key,boolean approx, long maxLen, byte[] entryId, byte[][] pairs){
+    if(maxLen<=0){
+      xadd(key,entryId,pairs);
+      return;
+    }
+    byte[][] params;
+    if(approx){
+      params=joinParameters(MAXLEN.raw,SafeEncoder.encode("~"), joinParameters(toByteArray(maxLen)
+              ,entryId,pairs));
+    }else{
+      params=joinParameters(MAXLEN.raw,joinParameters(toByteArray(maxLen)
+              ,entryId,pairs));
+    }
+    sendCommand(XADD,joinParameters(key,params));
+  }
+
+  public void xlen(byte[] key){
+    sendCommand(XLEN,key);
+  }
+
+  public void xrange(byte[] key, byte[] startEntryId, byte[] endEntryId, long count){
+    if (count < 0) {
+      sendCommand(XRANGE, key, startEntryId, endEntryId);
+    } else {
+      sendCommand(XRANGE, key, startEntryId, endEntryId, COUNT.raw, toByteArray(count));
+    }
+  }
+
+  public void xrevrange(byte[] key, byte[] startEntryId, byte[] endEntryId, long count){
+    if (count < 0) {
+      sendCommand(XREVRANGE, key, startEntryId, endEntryId);
+    } else {
+      sendCommand(XREVRANGE, key, startEntryId, endEntryId, COUNT.raw, toByteArray(count));
+    }
+  }
+
+  public void xread(byte[][] pairs){
+    sendCommand(XREAD,joinParameters(STREAMS.raw,pairs));
+  }
+
+  public void xread(long count, byte[][] pairs){
+    sendCommand(XREAD,joinParameters(COUNT.raw,toByteArray(count),joinParameters(STREAMS.raw,pairs)));
+  }
+
+  public void xreadBlock(long block,byte[][] keys){
+    int keyNum=keys.length;
+    byte[][] params=new byte[2 + keyNum * 2][];
+    params[0] = BLOCK.raw;
+    params[1] = toByteArray(block);
+    System.arraycopy(keys,0,params,2, keyNum);
+    for(int i = keyNum;i < params.length;i++){
+      params[i] = $.raw;
+    }
+    sendCommand(XREAD,params);
+  }
+
+  public void xdel(byte[] key, byte[] entryId){
+    sendCommand(XDEL, key, entryId);
+  }
+
+  public void xtrimWithMaxlen(byte[] key, boolean approx, long maxlen) {
+    byte[][] params;
+    if(approx){
+      sendCommand(XTRIM, key, MAXLEN.raw, SafeEncoder.encode("~"), toByteArray(maxlen));
+    }else{
+      sendCommand(XTRIM, key, MAXLEN.raw, toByteArray(maxlen));
+    }
+  }
+
+  public void xgroupcreate(byte[] key, byte[] group, byte[] entryId, boolean mkstream){
+    if(mkstream) {
+      sendCommand(XGROUP, CREATE.raw, key, group, entryId, MKSTREAM.raw);
+    }else{
+      sendCommand(XGROUP, CREATE.raw, key, group, entryId);
+    }
+  }
+
+  public void xgroupsetid(byte[] key, byte[] group, byte[] entryId){
+    sendCommand(XGROUP, SETID.raw, key, group, entryId);
+  }
+
+  public void xgroupdestroy(byte[] key, byte[] group){
+    sendCommand(XGROUP, DESTROY.raw, key, group);
+  }
+
+  public void xgroupdelconsumer(byte[] key, byte[] group, byte[] consumer){
+    sendCommand(XGROUP, DELCONSUMER.raw, key, group, consumer);
+  }
+
+  public void xinfostream(byte[] key){
+    sendCommand(XINFO,STREAMS.raw, key);
+  }
+
+  public void xinfogroups(byte[] key){
+    sendCommand(XINFO,GROUPS.raw, key);
+  }
+
+  public void xinfoconsumers(byte[] key, byte[] group){
+    sendCommand(XINFO,CONSUMERS.raw, key, group);
+  }
+
+  public void xpending(byte[] key, byte[] group){
+    sendCommand(XPENDING,key,group);
+  }
+
+  public void xpending(byte[] key, byte[] group, byte[] startEntryId, byte[] endEntryId, long count, byte[] consumer){
+    if(consumer==null){
+      sendCommand(XPENDING, key, group, startEntryId, endEntryId, toByteArray(count));
+    }else{
+      sendCommand(XPENDING, key, group, startEntryId, endEntryId, toByteArray(count), consumer);
+    }
+  }
+
+  public void xreadgroup(byte[] group, byte[] consumer, byte[][] params){
+    sendCommand(XREADGROUP, joinParameters(GROUP.raw, joinParameters(group, consumer,joinParameters(STREAMS.raw, params))));
+  }
+
+  public void xreadgroup(byte[] group, byte[] consumer, long count, byte[][] params){
+    sendCommand(XREADGROUP, joinParameters(GROUP.raw
+            , joinParameters(group, consumer
+                    , joinParameters(COUNT.raw, toByteArray(count)
+                            ,joinParameters(STREAMS.raw, params)))));
+  }
+
+  public void xreadgroupBlock(byte[] group, byte[] consumer, long block, byte[][] keys){
+    int keyNum=keys.length;
+    byte[][] params=new byte[5 + keyNum * 2][];
+    params[0] = GROUP.raw;
+    params[1] = group;
+    params[2] = consumer;
+    params[3] = BLOCK.raw;
+    params[4] = toByteArray(block);
+    System.arraycopy(keys,0,params,5, keyNum);
+    for(int i = keyNum + 5;i < params.length;i++){
+      params[i] = SafeEncoder.encode(">");
+    }
+    sendCommand(XREADGROUP, params);
+  }
+
+  public void xack(byte[] key, byte[] group, byte[][] entryIds){
+    sendCommand(XACK, joinParameters(key, group, entryIds));
+  }
+
+  public void xclaim(boolean force, boolean justid, byte[] key, byte[] group, byte[] consumer, long minIdleTime, long idleTime, long retryCount, byte[][] entryIds){
+    int len = 6;
+    if(retryCount > 0){
+      len +=2;
+    }
+    if(force){
+      len++;
+    }
+    if(justid){
+      len++;
+    }
+    byte[][] args = new byte[entryIds.length + len][];
+    len = entryIds.length + 4;
+    args[0] = key;
+    args[1] = group;
+    args[2] = consumer;
+    args[3] = toByteArray(minIdleTime);
+    System.arraycopy(entryIds, 0, args, 4, entryIds.length);
+    args[len++] = IDLE.raw;
+    args[len++] = toByteArray(idleTime);
+    if(retryCount > 0){
+      args[len++] = RETRYCOUNT.raw;
+      args[len++] = toByteArray(retryCount);
+    }
+    if(force){
+      args[len++] = FORCE.raw;
+    }
+    if(justid){
+      args[len] = JUSTID.raw;
+    }
+    sendCommand(XCLAIM, args);
+  }
 }
