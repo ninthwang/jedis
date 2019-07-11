@@ -23,6 +23,10 @@ public class StreamEntry implements Serializable{
   public Map<String, String> getFields() {
     return fields;
   }
+
+  public String getField(String name){
+    return fields == null ? null : fields.get(name);
+  }
   
   @Override
   public String toString() {

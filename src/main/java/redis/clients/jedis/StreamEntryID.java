@@ -120,6 +120,6 @@ public class StreamEntryID implements Comparable<StreamEntryID>, Serializable{
   }
 
   public StreamEntryID getNext(){
-    return new StreamEntryID(time,sequence+1);
+    return new StreamEntryID(time, sequence + 1);
   }
 }
