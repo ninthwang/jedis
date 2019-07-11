@@ -1313,7 +1313,7 @@ public class BinaryClient extends Connection {
     int streamsIndex = 0;
     params[streamsIndex++] = Keyword.COUNT.raw;
     params[streamsIndex++] = toByteArray(count);
-    if(block > 0) {
+    if(block >= 0) {
       params[streamsIndex++] = Keyword.BLOCK.raw;
       params[streamsIndex++] = toByteArray(block);
     }
@@ -1402,7 +1402,7 @@ public class BinaryClient extends Connection {
       params[streamsIndex++] = Keyword.COUNT.raw;
       params[streamsIndex++] = toByteArray(count);
     }
-    if(block > 0) {
+    if(block >= 0) {
       params[streamsIndex++] = Keyword.BLOCK.raw;
       params[streamsIndex++] = toByteArray(block);
     }
