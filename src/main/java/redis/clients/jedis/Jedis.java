@@ -1,13 +1,8 @@
 package redis.clients.jedis;
 
 import java.net.URI;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
@@ -3733,6 +3728,35 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     }
   }
 
+  public List<Entry<String, List<StreamEntry>>> xread(final int count, final long block, final List<Entry<String,StreamEntryID>> streams){
+    Map<byte[], byte[]> params=new HashMap<>(streams.size());
+    for(Entry<String,StreamEntryID> entry : streams) {
+      params.put(SafeEncoder.encode(entry.getKey()), SafeEncoder.encode(entry.getValue().toString()));
+    }
+    checkIsInMultiOrPipeline();
+    client.xread(count, block, params);
+    client.setTimeoutInfinite();
+
+    try {
+      List<Object> streamsEntries = client.getObjectMultiBulkReply();
+      if(streamsEntries == null) {
+        return new ArrayList<>();
+      }
+
+      List<Entry<String, List<StreamEntry>>> result = new ArrayList<>(streamsEntries.size());
+      for(Object streamObj : streamsEntries) {
+        List<Object> stream = (List<Object>)streamObj;
+        String streamId = SafeEncoder.encode((byte[])stream.get(0));
+        List<StreamEntry> streamEntries = BuilderFactory.STREAM_ENTRY_LIST.build(stream.get(1));
+        result.add(new AbstractMap.SimpleEntry<String, List<StreamEntry>>(streamId, streamEntries));
+      }
+
+      return result;
+    } finally {
+      client.rollbackTimeout();
+    }
+  }
+
   /**
    * {@inheritDoc}
    */
@@ -3799,6 +3823,30 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
       return null;
     }
     
+    List<Entry<String, List<StreamEntry>>> result = new ArrayList<>(streamsEntries.size());
+    for(Object streamObj : streamsEntries) {
+      List<Object> stream = (List<Object>)streamObj;
+      String streamId = SafeEncoder.encode((byte[])stream.get(0));
+      List<StreamEntry> streamEntries = BuilderFactory.STREAM_ENTRY_LIST.build(stream.get(1));
+      result.add(new AbstractMap.SimpleEntry<String, List<StreamEntry>>(streamId, streamEntries));
+    }
+    return result;
+  }
+
+  public List<Entry<String, List<StreamEntry>>> xreadGroup(final String groupname, final String consumer, final int count, final long block,
+                                                           final boolean noAck, final List<Entry<String, StreamEntryID>> streams) {
+    Map<byte[], byte[]> params=new HashMap<>(streams.size());
+    for(Entry<String,StreamEntryID> entry : streams) {
+      params.put(SafeEncoder.encode(entry.getKey()), SafeEncoder.encode(entry.getValue().toString()));
+    }
+    checkIsInMultiOrPipeline();
+    client.xreadGroup(SafeEncoder.encode(groupname), SafeEncoder.encode(consumer), count, block, noAck, params);
+
+    List<Object> streamsEntries = client.getObjectMultiBulkReply();
+    if(streamsEntries == null) {
+      return null;
+    }
+
     List<Entry<String, List<StreamEntry>>> result = new ArrayList<>(streamsEntries.size());
     for(Object streamObj : streamsEntries) {
       List<Object> stream = (List<Object>)streamObj;

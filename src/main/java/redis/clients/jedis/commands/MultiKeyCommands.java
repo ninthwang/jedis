@@ -182,14 +182,37 @@ public interface MultiKeyCommands {
 
   /**
    * XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] ID [ID ...]
+   *
+   * @param count
+   * @param block
+   * @param streams
+   * @return
+   */
+  List<Map.Entry<String, List<StreamEntry>>> xread(final int count, final long block, final List<Map.Entry<String,StreamEntryID>> streams);
+
+  /**
+   * XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] ID [ID ...]
    * 
    * @param key
    * @param groupname
-   * @param cosumer
+   * @param consumer
    * @param count
    * @param block
    * @param streams
    * @return
    */
   List<Map.Entry<String, List<StreamEntry>>> xreadGroup(String groupname, String consumer, int count, long block, final boolean noAck, Map.Entry<String, StreamEntryID>... streams);
+
+  /**
+   * XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] ID [ID ...]
+   *
+   * @param groupname
+   * @param consumer
+   * @param count
+   * @param block
+   * @param streams
+   * @return
+   */
+  List<Map.Entry<String, List<StreamEntry>>> xreadGroup(final String groupname, final String consumer, final int count, final long block,
+                                                        final boolean noAck, final List<Map.Entry<String, StreamEntryID>> streams);
 }
