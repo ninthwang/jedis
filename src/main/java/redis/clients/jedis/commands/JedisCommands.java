@@ -480,4 +480,8 @@ public interface JedisCommands {
    */        
   List<StreamEntry> xclaim( String key, String group, String consumername, long minIdleTime, 
       long newIdleTime, int retries, boolean force, StreamEntryID... ids);
+
+
+  List<StreamEntryID> xclaimJustid( String key, String group, String consumername,
+      long minIdleTime, long newIdleTime, int retries, boolean force, StreamEntryID... ids);
 }

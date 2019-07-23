@@ -3827,21 +3827,29 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   @Override
-  public StreamInfoOverview xinfoStream(String key){
+  public List<StreamEntryID> xclaimJustid( String key, String group, String consumername,
+      long minIdleTime, long newIdleTime, int retries, boolean force, StreamEntryID... ids) {
+    checkIsInMultiOrPipeline();
+    client.xclaimJustid(key, group, consumername, minIdleTime, newIdleTime, retries, force, ids);
+    return BuilderFactory.STREAM_ENTRY_ID_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public StreamInfoOverview xinfoStream(String key) {
     checkIsInMultiOrPipeline();
     client.xinfoStream(key);
     return BuilderFactory.STREAM_INFO_OVERVIEW.build(client.getObjectMultiBulkReply());
   }
 
   @Override
-  public List<StreamInfoGroup> xinfoGroups(String key){
+  public List<StreamInfoGroup> xinfoGroups(String key) {
     checkIsInMultiOrPipeline();
     client.xinfoGroups(key);
     return BuilderFactory.STREAM_INFO_GROUP_LIST.build(client.getObjectMultiBulkReply());
   }
 
   @Override
-  public List<StreamInfoConsumer> xinfoConsumers(String key, String group){
+  public List<StreamInfoConsumer> xinfoConsumers(String key, String group) {
     checkIsInMultiOrPipeline();
     client.xinfoConsumers(key, group);
     return BuilderFactory.STREAM_INFO_CONSUMER_LIST.build(client.getObjectMultiBulkReply());

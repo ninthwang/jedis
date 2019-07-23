@@ -483,6 +483,32 @@ public final class BuilderFactory {
       return "StreamEntryID";
     }
   };
+
+  public static final Builder<List<StreamEntryID>> STREAM_ENTRY_ID_LIST = new Builder<List<StreamEntryID>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<StreamEntryID> build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      List<Object> objectList = (List<Object>) data;
+      List<StreamEntryID> responses = new ArrayList<>(objectList.size());
+      if(objectList.isEmpty()){
+        return responses;
+      }
+      for(Object res : objectList) {
+        responses.add(STREAM_ENTRY_ID.build(res));
+      }
+      return responses;
+    }
+
+    @Override
+    public String toString() {
+      return "List<StreamEntryID>";
+    }
+
+
+  };
   
 
   public static final Builder<List<StreamEntry>> STREAM_ENTRY_LIST = new Builder<List<StreamEntry>>() {

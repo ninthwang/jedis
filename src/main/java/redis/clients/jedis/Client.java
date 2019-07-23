@@ -1263,6 +1263,17 @@ public class Client extends BinaryClient implements Commands {
   }
 
   @Override
+  public void xclaimJustid(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries,
+                     boolean force, StreamEntryID... ids) {
+
+    final byte[][] bids = new byte[ids.length][];
+    for (int i = 0; i < ids.length; i++) {
+      bids[i] = SafeEncoder.encode(ids[i].toString());
+    }
+    xclaim(SafeEncoder.encode(key), SafeEncoder.encode(group), SafeEncoder.encode(consumername), minIdleTime, newIdleTime, retries, force, true, bids);
+  }
+
+  @Override
   public void xinfoStream(String key){
     xinfoStream(SafeEncoder.encode(key));
   }

@@ -1430,7 +1430,7 @@ public class BinaryClient extends Connection {
     }
   }
 
-  public void xclaim(byte[] key, byte[] groupname, byte[] consumername, long minIdleTime, long newIdleTime, int retries, boolean force, byte[][] ids) {
+  public void xclaim(byte[] key, byte[] groupname, byte[] consumername, long minIdleTime, long newIdleTime, int retries, boolean force, boolean justid, byte[][] ids) {
       
       ArrayList<byte[]> arguments = new ArrayList<>(10 + ids.length);
 
@@ -1453,7 +1453,14 @@ public class BinaryClient extends Connection {
       if(force) {
         arguments.add(Keyword.FORCE.raw);        
       }
+      if(justid){
+        arguments.add(Keyword.FORCE.raw);
+      }
       sendCommand(XCLAIM, arguments.toArray(new byte[arguments.size()][]));
+  }
+
+  public void xclaim(byte[] key, byte[] groupname, byte[] consumername, long minIdleTime, long newIdleTime, int retries, boolean force, byte[][] ids) {
+    xclaim(key, groupname, consumername, minIdleTime, newIdleTime, retries, force, false, ids);
   }
 
   public void xinfoStream(byte[] key){

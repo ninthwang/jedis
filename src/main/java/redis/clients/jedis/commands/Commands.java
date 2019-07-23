@@ -392,6 +392,9 @@ public interface Commands {
   void xclaim(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries,
       boolean force, StreamEntryID... ids);
 
+  void xclaimJustid(String key, String group, String consumername, long minIdleTime, long newIdleTime, int retries,
+      boolean force, StreamEntryID... ids);
+
   void xinfoStream(String key);
 
   void xinfoGroups(String key);
