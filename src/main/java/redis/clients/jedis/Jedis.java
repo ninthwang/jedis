@@ -3826,6 +3826,27 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     return BuilderFactory.STREAM_ENTRY_LIST.build(client.getObjectMultiBulkReply());
   }
 
+  @Override
+  public StreamInfoOverview xinfoStream(String key){
+    checkIsInMultiOrPipeline();
+    client.xinfoStream(key);
+    return BuilderFactory.STREAM_INFO_OVERVIEW.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<StreamInfoGroup> xinfoGroups(String key){
+    checkIsInMultiOrPipeline();
+    client.xinfoGroups(key);
+    return BuilderFactory.STREAM_INFO_GROUP_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<StreamInfoConsumer> xinfoConsumers(String key, String group){
+    checkIsInMultiOrPipeline();
+    client.xinfoConsumers(key, group);
+    return BuilderFactory.STREAM_INFO_CONSUMER_LIST.build(client.getObjectMultiBulkReply());
+  }
+
   public Object sendCommand(ProtocolCommand cmd, String... args) {
     client.sendCommand(cmd, args);
     return client.getOne();

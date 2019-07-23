@@ -1,13 +1,6 @@
 package redis.clients.jedis.commands;
 
-import redis.clients.jedis.BitOP;
-import redis.clients.jedis.StreamEntryID;
-import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
-import redis.clients.jedis.SortingParams;
-import redis.clients.jedis.StreamEntry;
-import redis.clients.jedis.ZParams;
+import redis.clients.jedis.*;
 
 import java.util.List;
 import java.util.Map;
@@ -193,4 +186,9 @@ public interface MultiKeyCommands {
    */
   List<Map.Entry<String, List<StreamEntry>>> xreadGroup(String groupname, String consumer, int count, long block, final boolean noAck, Map.Entry<String, StreamEntryID>... streams);
 
+  StreamInfoOverview xinfoStream(String key);
+
+  List<StreamInfoGroup> xinfoGroups(String key);
+
+  List<StreamInfoConsumer> xinfoConsumers(String key, String group);
 }

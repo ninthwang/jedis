@@ -1,13 +1,6 @@
 package redis.clients.jedis;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import redis.clients.jedis.util.JedisByteHashMap;
 import redis.clients.jedis.util.SafeEncoder;
@@ -552,6 +545,144 @@ public final class BuilderFactory {
     @Override
     public String toString() {
       return "List<StreamPendingEntry>";
+    }
+  };
+
+  public static final Builder<StreamEntry> STREAM_ENTRY = new Builder<StreamEntry>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public StreamEntry build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      List<Object> streamsEntry = (List<Object>)data;
+      String entryIdString = SafeEncoder.encode((byte[])streamsEntry.get(0));
+      StreamEntryID entryID = new StreamEntryID(entryIdString);
+      List<byte[]> hash = (List<byte[]>)streamsEntry.get(1);
+
+      Iterator<byte[]> hashIterator = hash.iterator();
+      Map<String, String> map = new HashMap<>(hash.size()/2);
+      while(hashIterator.hasNext()) {
+        map.put(SafeEncoder.encode((byte[])hashIterator.next()), SafeEncoder.encode((byte[])hashIterator.next()));
+      }
+      return new StreamEntry(entryID, map);
+    }
+
+    @Override
+    public String toString(){
+      return "StreamEntry";
+    }
+  };
+
+  public static final Builder<StreamInfoOverview> STREAM_INFO_OVERVIEW = new Builder<StreamInfoOverview>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public StreamInfoOverview build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      List<Object> info = (List<Object>) data;
+      StreamInfoOverview infoParams = new StreamInfoOverview();
+      infoParams.setLength(LONG.build(info.get(1)));
+      infoParams.setRadixTreeKeys(LONG.build(info.get(3)));
+      infoParams.setRadixTreeNodes(LONG.build(info.get(5)));
+      infoParams.setGroups(LONG.build(info.get(7)));
+      infoParams.setLastGeneratedId(STRING.build(info.get(9)));
+      infoParams.setFirstEntry(STREAM_ENTRY.build(info.get(11)));
+      infoParams.setLastEntry(STREAM_ENTRY.build(info.get(13)));
+      return infoParams;
+    }
+
+    @Override
+    public String toString(){
+      return "StreamInfoOverview";
+    }
+  };
+
+  public static final Builder<StreamInfoGroup> STREAM_INFO_GROUP = new Builder<StreamInfoGroup>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public StreamInfoGroup build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      List<Object> list = (List<Object>) data;
+      StreamInfoGroup groupInfo = new StreamInfoGroup();
+      groupInfo.setName(STRING.build(list.get(1)));
+      groupInfo.setConsumers(LONG.build(list.get(3)));
+      groupInfo.setPending(LONG.build(list.get(5)));
+      groupInfo.setLastDeliveredId(STREAM_ENTRY_ID.build(list.get(7)));
+      return groupInfo;
+    }
+
+    @Override
+    public String toString(){
+      return "StreamInfoGroup";
+    }
+  };
+
+  public static final Builder<List<StreamInfoGroup>> STREAM_INFO_GROUP_LIST = new Builder<List<StreamInfoGroup>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<StreamInfoGroup> build(Object data) {
+      if (null == data) {
+        return new ArrayList<>();
+      }
+      List<Object> list = (List<Object>) data;
+      List<StreamInfoGroup> result = new ArrayList<>(list.size());
+      for(Object group : list){
+        result.add(BuilderFactory.STREAM_INFO_GROUP.build(group));
+      }
+      return result;
+    }
+
+    @Override
+    public String toString(){
+      return "List<StreamInfoGroup>";
+    }
+  };
+
+  public static final Builder<StreamInfoConsumer> STREAM_INFO_CONSUMER = new Builder<StreamInfoConsumer>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public StreamInfoConsumer build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      List<Object> list = (List<Object>) data;
+      StreamInfoConsumer consumerInfo = new StreamInfoConsumer();
+      consumerInfo.setName(STRING.build(list.get(1)));
+      consumerInfo.setPending(LONG.build(list.get(3)));
+      if(list.size() > 4){
+        consumerInfo.setIdle(LONG.build(list.get(5)));
+      }
+      return consumerInfo;
+    }
+
+    @Override
+    public String toString(){
+      return "StreamInfoConsumer";
+    }
+  };
+
+  public static final Builder<List<StreamInfoConsumer>> STREAM_INFO_CONSUMER_LIST = new Builder<List<StreamInfoConsumer>>() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<StreamInfoConsumer> build(Object data) {
+      if (null == data) {
+        return new ArrayList<>();
+      }
+      List<Object> list = (List<Object>) data;
+      List<StreamInfoConsumer> result = new ArrayList<>(list.size());
+      for(Object consumer : list){
+        result.add(BuilderFactory.STREAM_INFO_CONSUMER.build(consumer));
+      }
+      return result;
+    }
+
+    @Override
+    public String toString(){
+      return "List<StreamInfoConsumer>";
     }
   };
 
