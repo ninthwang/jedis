@@ -1456,7 +1456,7 @@ public class BinaryClient extends Connection {
         arguments.add(Keyword.FORCE.raw);        
       }
       if(justid){
-        arguments.add(Keyword.FORCE.raw);
+        arguments.add(Keyword.JUSTID.raw);
       }
       sendCommand(XCLAIM, arguments.toArray(new byte[arguments.size()][]));
   }
