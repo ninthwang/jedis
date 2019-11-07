@@ -165,7 +165,6 @@ public interface MultiKeyCommands {
   /**
    * XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] ID [ID ...]
    * 
-   * @param key
    * @param count
    * @param block
    * @param streams
@@ -176,7 +175,6 @@ public interface MultiKeyCommands {
   /**
    * XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] ID [ID ...]
    * 
-   * @param key
    * @param groupname
    * @param consumer
    * @param count
